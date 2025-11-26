@@ -1,0 +1,128 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+' ======================
+' Classes and Attributes
+' ======================
+
+class User {
+     - name : String
+
+}
+
+class Customer {
+    - customerID : String
+    - name : String
+    - email : String
+}
+
+class DeliveryRider {
+    + availabilityStatus : Boolean
+}
+
+class VehicleDetails {
+    - vehicleType : String
+    - licensePlate : String
+}
+
+class Restaurant {
+    + name : String
+    + location : String
+}
+
+class MenuItem {
+    + name : String
+    + price : Double
+    + available : Boolean
+}
+
+class OrderItem {
+    + quantity : Integer
+    + price : Double
+}
+
+class Order {
+    + orderID : String
+    + orderDate : Date
+    + status : String
+}
+
+class Payment {
+    + paymentID : String
+    + amount : Double
+    + status : String
+}
+
+class PaymentMethod {
+}
+
+class CreditCard {
+    + cardNumber : String
+}
+
+class Cash {
+}
+
+class Wallet {
+    + walletId : String
+    + balance : Double
+}
+
+class Review {
+    + reviewID : String
+    + rating : Integer
+    + comments : String
+    + reviewDate : Date
+}
+
+class RiderReview {
+}
+
+class RestaurantReview {
+}
+
+class ContactDetails {
+    + email : String
+    + phoneNumber : String
+}
+
+class Address {
+    + streetAddress : String
+    + city : String
+}
+' ======================
+' Inheritance
+' ======================
+User <|-- Customer
+User <|-- DeliveryRider
+
+PaymentMethod <|-- CreditCard
+PaymentMethod <|-- Cash
+PaymentMethod <|-- Wallet
+
+Review <|-- RiderReview
+Review <|-- RestaurantReview
+
+' ======================
+' Composition (filled diamond)
+' ======================
+Customer "1" *-- "*" Address          
+Restaurant "1" *-- "*" MenuItem      
+Order "1" *-- "*" OrderItem          
+Payment "1" *-- "1" PaymentMethod    
+
+DeliveryRider "1" *-- "1" VehicleDetails 
+' ======================
+' Aggregation (hollow diamond)
+' ======================
+Customer "1" *-- "1" ContactDetails  
+Order "1" -- "1" Payment             
+
+' ======================
+' Associations
+' ======================
+Customer "1" -- "*" Order            
+Customer "1" -- "*" Review           
+DeliveryRider "1" -- "*" RiderReview      
+Restaurant "1" -- "*" RestaurantReview
+@enduml
