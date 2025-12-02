@@ -1004,67 +1004,221 @@ class VictimDashboardApp(BaseApp):
         
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
         
-        # Welcome card
-        welcome_card = ModernCardFrame(scrollable_frame, padding=40)
-        welcome_card.pack(fill="both", expand=True)
+        # ========== EMERGENCY SOS SECTION ==========
+        sos_card = ModernCardFrame(scrollable_frame, padding=40)
+        sos_card.pack(fill="both", expand=True, pady=(0, 30))
+        
+        # SOS Header with pulsating effect
+        sos_header = tk.Frame(sos_card, bg="white")
+        sos_header.pack(fill="x", pady=(0, 30))
+        
+        # SOS Icon with pulsating red background
+        sos_icon_frame = tk.Frame(sos_header, bg="#FEE2E2", width=70, height=70)
+        sos_icon_frame.pack(side="left", padx=(0, 20))
+        sos_icon_frame.pack_propagate(False)
         
         tk.Label(
-            welcome_card,
-            text="🆘 ASSISTANCE & SUPPORT",
-            font=("Segoe UI", 24, "bold"),
-            fg=self.colors["primary"],
+            sos_icon_frame,
+            text="🚨",
+            font=("Segoe UI", 36),
+            bg="#FEE2E2",
+            fg="#DC2626"
+        ).pack(expand=True)
+        
+        # SOS Title
+        title_frame = tk.Frame(sos_header, bg="white")
+        title_frame.pack(side="left", fill="both", expand=True)
+        
+        tk.Label(
+            title_frame,
+            text="🚨 EMERGENCY SOS REQUEST",
+            font=("Segoe UI", 22, "bold"),
+            fg="#DC2626",
             bg="white"
-        ).pack(anchor="w", pady=(0, 30))
+        ).pack(anchor="w")
         
         tk.Label(
-            welcome_card,
-            text="If you need assistance, resources, or want to provide feedback about the relief efforts, please use the options below.",
-            font=("Segoe UI", 15),
+            title_frame,
+            text="Send immediate help request for life-threatening situations",
+            font=("Segoe UI", 13),
             fg="#6B7280",
-            bg="white",
-            wraplength=600,
-            justify="left"
-        ).pack(anchor="w", pady=(0, 40))
+            bg="white"
+        ).pack(anchor="w", pady=(5, 0))
         
-        # Main button
-        feedback_btn = tk.Button(
-            welcome_card,
-            text="💬 PROVIDE FEEDBACK OR REQUEST ASSISTANCE",
-            font=("Segoe UI", 16, "bold"),
-            bg="#10B981",
+        # BIG RED SOS BUTTON
+        sos_button = tk.Button(
+            sos_card,
+            text="🚨 SEND SOS EMERGENCY REQUEST",
+            font=("Segoe UI", 18, "bold"),
+            bg="#DC2626",
             fg="white",
-            activebackground="#059669",
+            activebackground="#B91C1C",
             activeforeground="white",
             relief="flat",
             padx=40,
             pady=25,
             cursor="hand2",
-            command=self.open_give_feedback
+            command=self.open_sos_form
         )
-        feedback_btn.pack(fill="x", pady=(0, 40))
+        sos_button.pack(fill="x", pady=(0, 20))
         
-        # Emergency contact info
-        emergency_frame = tk.Frame(welcome_card, bg="white")
-        emergency_frame.pack(fill="x", pady=(20, 0))
+        # SOS Instructions
+        instructions = tk.Frame(sos_card, bg="white")
+        instructions.pack(fill="x", pady=(0, 20))
         
         tk.Label(
-            emergency_frame,
-            text="🚨 EMERGENCY CONTACTS",
-            font=("Segoe UI", 16, "bold"),
-            fg="#EF4444",
+            instructions,
+            text="📋 WHEN TO USE SOS:",
+            font=("Segoe UI", 14, "bold"),
+            fg="#374151",
             bg="white"
-        ).pack(anchor="center", pady=(0, 20))
+        ).pack(anchor="w", pady=(0, 10))
+        
+        sos_cases = [
+            "🔴 Life-threatening injuries or medical emergencies",
+            "🔴 Trapped under debris or structures",
+            "🔴 Immediate evacuation required",
+            "🔴 Fire, flood, or other imminent danger",
+            "🔴 Missing persons or family separation"
+        ]
+        
+        for case in sos_cases:
+            tk.Label(
+                instructions,
+                text=case,
+                font=("Segoe UI", 12),
+                fg="#6B7280",
+                bg="white",
+                anchor="w",
+                justify="left"
+            ).pack(anchor="w", pady=3)
+        
+        # ========== ASSISTANCE & FEEDBACK SECTION ==========
+        assistance_card = ModernCardFrame(scrollable_frame, padding=40)
+        assistance_card.pack(fill="both", expand=True, pady=(0, 30))
+        
+        tk.Label(
+            assistance_card,
+            text="📋 ASSISTANCE & SUPPORT",
+            font=("Segoe UI", 22, "bold"),
+            fg=self.colors["primary"],
+            bg="white"
+        ).pack(anchor="w", pady=(0, 30))
+        
+        tk.Label(
+            assistance_card,
+            text="For non-emergency assistance, resources, or to provide feedback about the relief efforts.",
+            font=("Segoe UI", 14),
+            fg="#6B7280",
+            bg="white",
+            wraplength=600,
+            justify="left"
+        ).pack(anchor="w", pady=(0, 30))
+        
+        # Button Grid for different options
+        button_grid = tk.Frame(assistance_card, bg="white")
+        button_grid.pack(fill="x", pady=(0, 20))
+        
+        # Left column
+        left_col = tk.Frame(button_grid, bg="white")
+        left_col.pack(side="left", fill="both", expand=True, padx=(0, 15))
+        
+        # Feedback Button
+        feedback_btn = tk.Button(
+            left_col,
+            text="💬 PROVIDE FEEDBACK",
+            font=("Segoe UI", 14, "bold"),
+            bg="#8B5CF6",
+            fg="white",
+            activebackground="#7C3AED",
+            activeforeground="white",
+            relief="flat",
+            padx=20,
+            pady=20,
+            cursor="hand2",
+            command=self.open_give_feedback
+        )
+        feedback_btn.pack(fill="x", pady=(0, 15))
+        
+        # Right column
+        right_col = tk.Frame(button_grid, bg="white")
+        right_col.pack(side="right", fill="both", expand=True, padx=(15, 0))
+        
+        # View Requests Button
+        requests_btn = tk.Button(
+            right_col,
+            text="📋 VIEW MY REQUESTS",
+            font=("Segoe UI", 14, "bold"),
+            bg="#3B82F6",
+            fg="white",
+            activebackground="#2563EB",
+            activeforeground="white",
+            relief="flat",
+            padx=20,
+            pady=20,
+            cursor="hand2",
+            command=self.view_my_requests
+        )
+        requests_btn.pack(fill="x", pady=(0, 15))
+        
+        # Resources Button
+        resources_btn = tk.Button(
+            left_col,
+            text="🛠️ VIEW RESOURCES",
+            font=("Segoe UI", 14, "bold"),
+            bg="#10B981",
+            fg="white",
+            activebackground="#059669",
+            activeforeground="white",
+            relief="flat",
+            padx=20,
+            pady=20,
+            cursor="hand2",
+            command=self.view_resources
+        )
+        resources_btn.pack(fill="x", pady=(0, 15))
+        
+        # Profile Button
+        profile_btn = tk.Button(
+            right_col,
+            text="👤 MY PROFILE",
+            font=("Segoe UI", 14, "bold"),
+            bg="#F59E0B",
+            fg="white",
+            activebackground="#D97706",
+            activeforeground="white",
+            relief="flat",
+            padx=20,
+            pady=20,
+            cursor="hand2",
+            command=self.view_profile
+        )
+        profile_btn.pack(fill="x")
+        
+        # ========== EMERGENCY CONTACTS ==========
+        contacts_card = ModernCardFrame(scrollable_frame, padding=40)
+        contacts_card.pack(fill="both", expand=True)
+        
+        tk.Label(
+            contacts_card,
+            text="📞 EMERGENCY CONTACTS",
+            font=("Segoe UI", 18, "bold"),
+            fg="#374151",
+            bg="white"
+        ).pack(anchor="center", pady=(0, 25))
         
         contacts = [
-            ("📞 Emergency Services", "112"),
+            ("📞 National Emergency", "112"),
             ("🏥 Medical Emergency", "115"),
             ("🚒 Fire Department", "16"),
-            ("👮 Police", "15")
+            ("👮 Police", "15"),
+            ("⚡ Electricity Emergency", "125"),
+            ("💧 Water Emergency", "1166")
         ]
         
         for service, number in contacts:
-            contact_frame = tk.Frame(emergency_frame, bg="white")
-            contact_frame.pack(fill="x", pady=8)
+            contact_frame = tk.Frame(contacts_card, bg="white")
+            contact_frame.pack(fill="x", pady=10)
             
             tk.Label(
                 contact_frame,
@@ -1080,7 +1234,7 @@ class VictimDashboardApp(BaseApp):
                 contact_frame,
                 text=number,
                 font=("Segoe UI", 14, "bold"),
-                fg="#EF4444",
+                fg="#DC2626",
                 bg="white"
             ).pack(side="right")
 
@@ -1090,11 +1244,45 @@ class VictimDashboardApp(BaseApp):
             login_app = LoginApp()
             login_app.mainloop()
 
+    def open_sos_form(self):
+        """Open SOS Emergency Request Form"""
+          # You'll need to create this
+        self.destroy()  # Or self.withdraw() if you want to keep dashboard open
+        from frontend.sos_form import SOSFormApp
+        sos_app = SOSFormApp(logged_in_user=self.logged_in_user)
+        app = SOSFormApp(
+            logged_in_user=self.logged_in_user,
+            db_connection=self.connection
+        ) 
+        sos_app.mainloop()
+
     def open_give_feedback(self):
+        """Open Give Feedback Form"""
         self.destroy()
         from frontend.give_feedback import GiveFeedbackApp
-        app = GiveFeedbackApp(logged_in_user=self.logged_in_user, db_connection=connection)
+        app = GiveFeedbackApp(logged_in_user=self.logged_in_user)
         app.mainloop()
+
+    # def view_my_requests(self):
+    #     """View SOS requests made by this victim"""
+    #     from frontend.view_requests import ViewRequestsApp  # You'll need to create this
+    #     self.destroy()
+    #     requests_app = ViewRequestsApp(logged_in_user=self.logged_in_user)
+    #     requests_app.mainloop()
+
+    # def view_resources(self):
+    #     """View available resources"""
+    #     from frontend.view_resources import ViewResourcesApp  # You'll need to create this
+    #     self.destroy()
+    #     resources_app = ViewResourcesApp(logged_in_user=self.logged_in_user)
+    #     resources_app.mainloop()
+
+    # def view_profile(self):
+    #     """View and edit victim profile"""
+    #     from frontend.victim_profile import VictimProfileApp  # You'll need to create this
+    #     self.destroy()
+    #     profile_app = VictimProfileApp(logged_in_user=self.logged_in_user)
+    #     profile_app.mainloop()
 
 # ----------------- Run the login -----------------
 if __name__ == "__main__":
