@@ -6,20 +6,20 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- 1. USER & ROLES
 -- Note: UserAccount IDs (1-7, 8-12) will be used as foreign keys in role-specific tables.
-
 INSERT INTO UserAccount (userID, name, email, phone, location, latitude, longitude, role, password_hash) VALUES
-(1, 'Alice Johnson', 'alice@example.com', '+1234567890', 'Admin Office', 34.0522, -118.2437, 'Admin', '$2a$10$hash1...'),
-(2, 'Bob''s Relief', 'bob.ngo@org.net', '+1122334455', 'Community Center A', 34.0530, -118.2450, 'NGO', '$2a$10$hash2...'),
-(3, 'Carol Day', 'carol@volunteer.net', '+9988776655', 'Downtown Area', 34.0540, -118.2460, 'Volunteer', '$2a$10$hash3...'),
-(4, 'David Smith', 'david@victim.com', '+1555666777', 'East Side Home', 34.0550, -118.2470, 'Victim', '$2a$10$hash4...'),
-(5, 'Eve Green', 'eve@volunteer.net', '+9988776644', 'North Side', 34.0600, -118.2500, 'Volunteer', '$2a$10$hash5...'),
-(6, 'Foster Care', 'foster@ngo.org', '+1444555666', 'Shelter B Hub', 34.0650, -118.2550, 'NGO', '$2a$10$hash6...'),
-(7, 'Grace Lee', 'grace@victim.com', '+1333222111', 'South Side Apt', 34.0700, -118.2600, 'Victim', '$2a$10$hash7...'),
-(8, 'Admin Two', 'admintwo@org.net', '+1112223333', 'Regional Office', 34.0000, -118.0000, 'Admin', '$2a$10$hash8...'),
-(9, 'Admin Three', 'adminthree@org.net', '+1112224444', 'Field Office', 34.0100, -118.0100, 'Admin', '$2a$10$hash9...'),
-(10, 'Helping Hands', 'helping@hands.org', '+1000111222', 'North Sector', 34.0200, -118.0200, 'NGO', '$2a$10$hash10...'),
-(11, 'Vol One', 'volone@vol.com', '+1000333444', 'Volunteer Base 1', 34.0300, -118.0300, 'Volunteer', '$2a$10$hash11...'),
-(12, 'Victim Two', 'victwo@vic.com', '+1000555666', 'Bridge Street', 34.0400, -118.0400, 'Victim', '$2a$10$hash12...');
+(1, 'Alice Johnson', 'alice@example.com', '+1234567890', 'Admin Office', 34.0522, -118.2437, 'Admin', 'password123'),
+(2, 'Bob''s Relief', 'bob.ngo@org.net', '+1122334455', 'Community Center A', 34.0530, -118.2450, 'NGO', 'password123'),
+(3, 'Carol Day', 'carol@volunteer.net', '+9988776655', 'Downtown Area', 34.0540, -118.2460, 'Volunteer', 'password123'),
+(4, 'David Smith', 'david@victim.com', '+1555666777', 'East Side Home', 34.0550, -118.2470, 'Victim', 'password123'),
+(5, 'Eve Green', 'eve@volunteer.net', '+9988776644', 'North Side', 34.0600, -118.2500, 'Volunteer', 'password123'),
+(6, 'Foster Care', 'foster@ngo.org', '+1444555666', 'Shelter B Hub', 34.0650, -118.2550, 'NGO', 'password123'),
+(7, 'Grace Lee', 'grace@victim.com', '+1333222111', 'South Side Apt', 34.0700, -118.2600, 'Victim', 'password123'),
+(8, 'Admin Two', 'admintwo@org.net', '+1112223333', 'Regional Office', 34.0000, -118.0000, 'Admin', 'password123'),
+(9, 'Admin Three', 'adminthree@org.net', '+1112224444', 'Field Office', 34.0100, -118.0100, 'Admin', 'password123'),
+(10, 'Helping Hands', 'helping@hands.org', '+1000111222', 'North Sector', 34.0200, -118.0200, 'NGO', 'password123'),
+(11, 'Vol One', 'volone@vol.com', '+1000333444', 'Volunteer Base 1', 34.0300, -118.0300, 'Volunteer', 'password123'),
+(12, 'Victim Two', 'victwo@vic.com', '+1000555666', 'Bridge Street', 34.0400, -118.0400, 'Victim', 'password123');
+
 
 -- Reset AUTO_INCREMENT to ensure future inserts (if any) start after the manually set IDs
 ALTER TABLE UserAccount AUTO_INCREMENT = 13;
