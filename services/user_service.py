@@ -32,3 +32,15 @@ class UserService:
     def update_password(self, user_id, new_password):
         """Update user password"""
         return self.user_repo.update_password(user_id, new_password)
+
+    def get_ngo_details(self, ngo_id):
+        """Get NGO details including resource management permission"""
+        return self.user_repo.get_ngo_details(ngo_id)
+
+    def get_all_ngos_with_permission(self):
+        """Get all NGOs with their resource management permission status"""
+        return self.user_repo.get_all_ngos()
+
+    def update_ngo_resource_permission(self, ngo_id, can_manage_resources):
+        """Update an NGO's resource management permission"""
+        return self.user_repo.update_ngo_resource_permission(ngo_id, can_manage_resources)

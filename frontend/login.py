@@ -461,6 +461,22 @@ class LoginApp(BaseApp):
             command=self.login
         )
         login_btn.pack(fill="x", pady=(0, 25))
+
+        signup_btn = tk.Button(
+            form_frame,
+            text="📝 DON'T HAVE AN ACCOUNT? SIGN UP!",
+            font=("Segoe UI", 12),
+            bg="#6B7280",
+            fg="white",
+            activebackground="#4B5563",
+            activeforeground="white",
+            relief="flat",
+            padx=30,
+            pady=10,
+            cursor="hand2",
+            command=self.open_signup_window
+        )
+        signup_btn.pack(fill="x", pady=(10, 25))
         
         # Footer
         footer = tk.Frame(card, bg="white")
@@ -476,6 +492,14 @@ class LoginApp(BaseApp):
         
         self.after(100, lambda: self.email_entry.focus_set())
         self.create_status_bar()
+
+    def open_signup_window(self):
+        self.destroy() # Close the login window
+        from frontend.signup import SignUpApp
+        root = tk.Tk()
+        app = SignUpApp(root)
+        root.protocol("WM_DELETE_WINDOW", app.on_closing)
+        root.mainloop()
 
     def login(self):
         email = self.email_entry.get().strip()
@@ -637,6 +661,7 @@ class AdminOptionsApp(BaseApp):
             ("📝 REGISTER NEW NGO", self.open_register_ngo, "#EF4444"),
             ("🌐 LANGUAGE SETTINGS", self.change_language, "#6B7280"),
             ("📋 SYSTEM OVERVIEW", self.show_system_overview, "#06B6D4"),
+            ("🛡️ MANAGE NGO PERMISSIONS", self.open_manage_ngo_permissions, "#FFC107"),
         ]
         
         # Add a Manage Resources button for Admin
@@ -771,6 +796,13 @@ class AdminOptionsApp(BaseApp):
         from frontend.manage_resources import ManageResourcesApp
         app = ManageResourcesApp(logged_in_user=self.logged_in_user, db_connection=self.db_connection, on_close_callback=self.deiconify)
 
+    def open_manage_ngo_permissions(self):
+        self.destroy()
+        from frontend.manage_ngo_permissions import ManageNGOPermissionsApp
+        app = ManageNGOPermissionsApp(self, logged_in_user=self.logged_in_user, db_connection=db)
+        app.mainloop()
+
+# ----------------- NGO Dashboard -----------------
 # ----------------- NGO Dashboard -----------------
 class NGODashboardApp(BaseApp):
     def __init__(self, logged_in_user, db_connection=None):

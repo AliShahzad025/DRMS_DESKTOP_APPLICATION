@@ -26,6 +26,7 @@ CREATE TABLE NGO (
     ngoID INT PRIMARY KEY,
     orgName VARCHAR(200) NOT NULL,
     verified BOOLEAN DEFAULT FALSE,
+    can_manage_resources BOOLEAN DEFAULT FALSE, -- New column for resource management permission
     registration_doc VARCHAR(255),
     region VARCHAR(150),
     contact_person VARCHAR(150),
