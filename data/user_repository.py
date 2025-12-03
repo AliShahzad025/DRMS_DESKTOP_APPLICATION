@@ -46,7 +46,13 @@ class UserRepository(BaseRepository):
         Authenticate user with email and plain text password
         Returns user data if successful, None if authentication fails
         """
-        query = "SELECT * FROM useraccount WHERE email = %s AND password_hash = %s"
+        query = """
+            SELECT ua.*, 
+                   CASE WHEN ua.role = 'NGO' THEN n.verified ELSE NULL END as verified
+            FROM useraccount ua
+            LEFT JOIN NGO n ON ua.userID = n.ngoID
+            WHERE ua.email = %s AND ua.password_hash = %s
+        """
         user = self.fetch_one(query, (email, password))
         return user
     
