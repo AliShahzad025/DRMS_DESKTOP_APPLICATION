@@ -7,6 +7,7 @@ from tkinter import ttk, messagebox
 from services.user_service import UserService
 from data.db_connection import DatabaseConnection
 from data.user_repository import UserRepository
+from frontend.manage_resources import ManageResourcesApp
 
 # ---------- DRMS Main GUI ----------
 class DRMSApp(tk.Tk):
@@ -44,6 +45,11 @@ class DRMSApp(tk.Tk):
         btn_frame.pack(fill="x", pady=5)
 
         tk.Button(btn_frame, text="Refresh Users", font=("Helvetica", 11, "bold"), bg="#4CAF50", fg="white", command=self.load_users).pack(side="left", padx=10)
+        
+        # Add Manage Resources Button
+        if self.logged_in_user and (self.logged_in_user[5] == "Admin" or self.logged_in_user[5] == "NGO"):
+            tk.Button(btn_frame, text="Manage Resources", font=("Helvetica", 11, "bold"), bg="#007BFF", fg="white", command=self.open_manage_resources).pack(side="left", padx=10)
+
         tk.Button(btn_frame, text="Exit", font=("Helvetica", 11, "bold"), bg="#f44336", fg="white", command=self.destroy).pack(side="right", padx=10)
 
         # Users table
@@ -68,4 +74,25 @@ class DRMSApp(tk.Tk):
         users = self.user_service.list_users()
         for u in users:
             self.tree.insert("", "end", values=(u[0], u[1], u[2], u[3], u[4], u[5]))
+
+    def open_manage_resources(self):
+        self.withdraw()  # Hide the main window
+        # Pass the logged_in_user as a dictionary
+        user_dict = {
+            "id": self.logged_in_user[0],
+            "name": self.logged_in_user[1],
+            "email": self.logged_in_user[2],
+            "phone": self.logged_in_user[3],
+            "location": self.logged_in_user[4],
+            "role": self.logged_in_user[5],
+            "password_hash": self.logged_in_user[6] if len(self.logged_in_user) > 6 else None,
+            "verified": self.logged_in_user[10] if self.logged_in_user[5] == "NGO" and len(self.logged_in_user) > 10 else False
+        }
+        manage_app = ManageResourcesApp(logged_in_user=user_dict, db_connection=self.connection, on_close_callback=self.deiconify)
+        # The manage_app.mainloop() is not needed here as it will block the main app.
+        # The Toplevel window will be managed by the main Tkinter event loop.
+
+    def on_manage_resources_close(self, manage_app):
+        manage_app.destroy()
+        self.deiconify() # Show the main window again
 #done
