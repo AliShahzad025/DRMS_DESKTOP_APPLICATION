@@ -183,7 +183,8 @@ def normalize_user(user):
             "lat": user[5],
             "lng": user[6],
             "lang": user[7],
-            "role": user[8]
+            "role": user[8],
+            "verified": user[9] if len(user) > 9 else False  # Add verified status
         }
     else:
         return {}
@@ -194,6 +195,8 @@ class BaseApp(tk.Tk):
         super().__init__()
         self.lang_manager = LanguageManager()
         self.colors = None
+        self.db_connection = None
+        self.cursor = None
 
     def create_header(self, title, subtitle=None, show_back_button=False, back_command=None):
         """
@@ -282,12 +285,18 @@ class BaseApp(tk.Tk):
         )
         self.time_label.pack(side="right", padx=25)
         
+        self.after_id = None  # Store the ID of the after job
         self.update_time()
     
     def update_time(self):
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.time_label.config(text=current_time)
-        self.after(1000, self.update_time)
+        self.after_id = self.after(1000, self.update_time)
+
+    def destroy(self):
+        if self.after_id:
+            self.after_cancel(self.after_id)
+        super().destroy()
 
 # ----------------- Login App -----------------
 class LoginApp(BaseApp):
@@ -493,11 +502,11 @@ class LoginApp(BaseApp):
                 self.destroy()
                 
                 if role == "Admin":
+                    from frontend.login import AdminOptionsApp
                     app = AdminOptionsApp(logged_in_user=user, db_connection=connection)
                     app.mainloop()
                 elif role == "Volunteer":
-                    from frontend.volunteer import VolunteerApp
-                    app = VolunteerApp(logged_in_user=user, db_connection=connection)
+                    app = VolunteerDashboardApp(logged_in_user=user, db_connection=connection)
                     app.mainloop()
                 elif role == "NGO":
                     app = NGODashboardApp(logged_in_user=user, db_connection=connection)
@@ -518,10 +527,20 @@ class AdminOptionsApp(BaseApp):
     def __init__(self, logged_in_user, db_connection=None):
         super().__init__()
         self.logged_in_user = logged_in_user
+        self.db_connection = db_connection
         self.colors = apply_windows11_theme(self)
         self.title("DRMS - Admin Dashboard")
         self.geometry("1000x900")
         self.resizable(True, True)
+        
+        # Initialize database cursor
+        if self.db_connection:
+            self.cursor = self.db_connection.cursor()
+        else:
+            from data.db_connection import DatabaseConnection
+            db = DatabaseConnection()
+            self.db_connection = db.connect()
+            self.cursor = self.db_connection.cursor()
         
         try:
             enable_acrylic_for_window(self, accent_color=0xCCFFFFFF)
@@ -619,6 +638,12 @@ class AdminOptionsApp(BaseApp):
             ("🌐 LANGUAGE SETTINGS", self.change_language, "#6B7280"),
             ("📋 SYSTEM OVERVIEW", self.show_system_overview, "#06B6D4"),
         ]
+        
+        # Add a Manage Resources button for Admin
+        options_card = ModernCardFrame(scrollable_frame, padding=30)
+        options_card.pack(fill="both", expand=True, pady=(0, 30))
+        tk.Button(options_card, text="📦 MANAGE RESOURCES & INVENTORY", font=("Segoe UI", 14, "bold"), bg="#10B981", fg="white",
+                  command=self.open_manage_resources).pack(fill="x", pady=12)
         
         # Add buttons to left column
         for text, command, color in left_options:
@@ -720,28 +745,32 @@ class AdminOptionsApp(BaseApp):
     def open_prioritize_requests(self):
         self.destroy()
         from frontend.prioritize_requests import PrioritizeRequestsApp
-        app = PrioritizeRequestsApp(logged_in_user=self.logged_in_user, db_connection=connection)
+        app = PrioritizeRequestsApp(logged_in_user=self.logged_in_user, db_connection=self.db_connection)
         app.mainloop()
 
     def open_verify_volunteer(self):
         self.destroy()
         from frontend.verify_volunteer import VerifyVolunteerApp
-        app = VerifyVolunteerApp(logged_in_user=self.logged_in_user, db_connection=connection)
+        app = VerifyVolunteerApp(logged_in_user=self.logged_in_user, db_connection=self.db_connection)
         app.mainloop()
 
     def open_verify_ngo(self):
         self.destroy()
         from frontend.verify_ngo import VerifyNGOApp
-        app = VerifyNGOApp(db_connection=connection)
+        app = VerifyNGOApp(db_connection=self.db_connection)
         app.mainloop()
 
     def open_register_ngo(self):
         self.destroy()
         from frontend.register_ngo import RegisterNGOApp
-        app = RegisterNGOApp(db_connection=connection)
+        app = RegisterNGOApp(db_connection=self.db_connection)
         app.mainloop()
 
-# ----------------- NGO Dashboard -----------------
+    def open_manage_resources(self):
+        self.withdraw()
+        from frontend.manage_resources import ManageResourcesApp
+        app = ManageResourcesApp(logged_in_user=self.logged_in_user, db_connection=self.db_connection, on_close_callback=self.deiconify)
+
 # ----------------- NGO Dashboard -----------------
 class NGODashboardApp(BaseApp):
     def __init__(self, logged_in_user, db_connection=None):
@@ -752,6 +781,15 @@ class NGODashboardApp(BaseApp):
         self.title(f"DRMS - NGO Dashboard")
         self.geometry("900x800")
         self.resizable(True, True)
+        
+        # Initialize database cursor
+        if self.db_connection:
+            self.cursor = self.db_connection.cursor()
+        else:
+            from data.db_connection import DatabaseConnection
+            db = DatabaseConnection()
+            self.db_connection = db.connect()
+            self.cursor = self.db_connection.cursor()
         
         try:
             enable_acrylic_for_window(self, accent_color=0xCCFFFFFF)
@@ -925,10 +963,9 @@ class NGODashboardApp(BaseApp):
 
     def open_manage_resources(self):
         """Open manage resources module"""
-        self.destroy()
+        self.withdraw()
         from frontend.manage_resources import ManageResourcesApp
-        app = ManageResourcesApp(logged_in_user=self.logged_in_user, db_connection=self.db_connection)
-        app.mainloop()
+        app = ManageResourcesApp(logged_in_user=self.logged_in_user, db_connection=self.db_connection, on_close_callback=self.deiconify)
 
     def open_register_volunteer(self):
         """Open register volunteer module"""
@@ -951,6 +988,7 @@ class NGODashboardApp(BaseApp):
             self.lang_manager.set_language(lang)
             messagebox.showinfo("Language Changed", f"Language changed to {lang}.", parent=self)
 
+# ----------------- Victim Dashboard -----------------
 # ----------------- Victim Dashboard -----------------
 class VictimDashboardApp(BaseApp):
     def __init__(self, logged_in_user, db_connection=None):
@@ -1246,15 +1284,10 @@ class VictimDashboardApp(BaseApp):
 
     def open_sos_form(self):
         """Open SOS Emergency Request Form"""
-          # You'll need to create this
-        self.destroy()  # Or self.withdraw() if you want to keep dashboard open
+        self.withdraw()  # Hide the main window
         from frontend.sos_form import SOSFormApp
-        sos_app = SOSFormApp(logged_in_user=self.logged_in_user)
-        app = SOSFormApp(
-            logged_in_user=self.logged_in_user,
-            db_connection=self.connection
-        ) 
-        sos_app.mainloop()
+        sos_app = SOSFormApp(logged_in_user=self.logged_in_user, db_connection=self.db_connection, on_close_callback=self.deiconify)
+        # sos_app.mainloop() # Removed blocking mainloop
 
     def open_give_feedback(self):
         """Open Give Feedback Form"""
@@ -1263,26 +1296,577 @@ class VictimDashboardApp(BaseApp):
         app = GiveFeedbackApp(logged_in_user=self.logged_in_user)
         app.mainloop()
 
-    # def view_my_requests(self):
-    #     """View SOS requests made by this victim"""
-    #     from frontend.view_requests import ViewRequestsApp  # You'll need to create this
-    #     self.destroy()
-    #     requests_app = ViewRequestsApp(logged_in_user=self.logged_in_user)
-    #     requests_app.mainloop()
+    def view_my_requests(self):
+        """View SOS requests made by this victim"""
+        messagebox.showinfo("View Requests", "This feature will be available soon!", parent=self)
+        self.status_label.config(text="⚠ View My Requests - Coming Soon")
 
-    # def view_resources(self):
-    #     """View available resources"""
-    #     from frontend.view_resources import ViewResourcesApp  # You'll need to create this
-    #     self.destroy()
-    #     resources_app = ViewResourcesApp(logged_in_user=self.logged_in_user)
-    #     resources_app.mainloop()
+    def view_resources(self):
+        """View available resources"""
+        messagebox.showinfo("View Resources", "This feature will be available soon!", parent=self)
+        self.status_label.config(text="⚠ View Resources - Coming Soon")
 
-    # def view_profile(self):
-    #     """View and edit victim profile"""
-    #     from frontend.victim_profile import VictimProfileApp  # You'll need to create this
-    #     self.destroy()
-    #     profile_app = VictimProfileApp(logged_in_user=self.logged_in_user)
-    #     profile_app.mainloop()
+    def view_profile(self):
+        """View and edit victim profile"""
+        messagebox.showinfo("View Profile", "This feature will be available soon!", parent=self)
+        self.status_label.config(text="⚠ View Profile - Coming Soon")
+
+
+# ----------------- Volunteer Dashboard -----------------
+class VolunteerDashboardApp(BaseApp):
+    def __init__(self, logged_in_user, db_connection=None):
+        super().__init__()
+        self.logged_in_user = logged_in_user
+        self.db_connection = db_connection
+        self.colors = apply_windows11_theme(self)
+        self.title(f"DRMS - Volunteer Portal")
+        self.geometry("900x800")
+        self.resizable(True, True)
+        
+        # Initialize database cursor
+        if self.db_connection:
+            self.cursor = self.db_connection.cursor()
+        else:
+            from data.db_connection import DatabaseConnection
+            db = DatabaseConnection()
+            self.db_connection = db.connect()
+            self.cursor = self.db_connection.cursor()
+        
+        try:
+            enable_acrylic_for_window(self, accent_color=0xCCFFFFFF)
+        except Exception:
+            pass
+        
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (900 // 2)
+        y = (self.winfo_screenheight() // 2) - (800 // 2)
+        self.geometry(f"+{x}+{y}")
+        
+        self.create_widgets()
+        self.create_status_bar()
+        self.load_my_tasks()
+
+    def create_widgets(self):
+        # Header with back button
+        self.create_header(
+            title="👷 VOLUNTEER PORTAL",
+            subtitle=f"Welcome, {self.logged_in_user.get('name', 'Volunteer')}",
+            show_back_button=True,
+            back_command=self.go_back_to_login
+        )
+        
+        # Create scrollable main container
+        main_container = tk.Frame(self, bg=self.colors["background"])
+        main_container.pack(fill="both", expand=True)
+        
+        # Create canvas with scrollbar
+        canvas = tk.Canvas(main_container, bg=self.colors["background"], highlightthickness=0)
+        scrollbar = ttk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=self.colors["background"])
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side="left", fill="both", expand=True, padx=50, pady=30)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Bind mouse wheel for scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        # ========== WELCOME CARD ==========
+        welcome_card = ModernCardFrame(scrollable_frame, padding=40)
+        welcome_card.pack(fill="both", expand=True, pady=(0, 30))
+        
+        tk.Label(
+            welcome_card,
+            text=f"👋 Welcome, {self.logged_in_user.get('name', 'Volunteer')}!",
+            font=("Segoe UI", 22, "bold"),
+            fg=self.colors["primary"],
+            bg="white"
+        ).pack(anchor="w", pady=(0, 15))
+        
+        tk.Label(
+            welcome_card,
+            text="Your dedication helps save lives. Manage your assigned tasks and help disaster victims.",
+            font=("Segoe UI", 14),
+            fg="#6B7280",
+            bg="white",
+            wraplength=600,
+            justify="left"
+        ).pack(anchor="w", pady=(0, 30))
+        
+        # Status cards
+        status_frame = tk.Frame(welcome_card, bg="white")
+        status_frame.pack(fill="x", pady=(0, 20))
+        
+        status_cards = [
+            ("🔄 Pending Tasks", "0", "#F59E0B"),
+            ("✅ Completed", "0", "#10B981"),
+            ("🚀 In Progress", "0", "#3B82F6"),
+            ("📋 Total Assigned", "0", "#8B5CF6")
+        ]
+        
+        for i, (label, count, color) in enumerate(status_cards):
+            card = tk.Frame(status_frame, bg=color, relief="solid", bd=1, width=150, height=100)
+            card.pack(side="left", padx=(0, 15) if i < 3 else (0, 0))
+            card.pack_propagate(False)
+            
+            tk.Label(
+                card,
+                text=label,
+                font=("Segoe UI", 12, "bold"),
+                fg="white",
+                bg=color
+            ).pack(pady=(15, 5))
+            
+            count_label = tk.Label(
+                card,
+                text=count,
+                font=("Segoe UI", 24, "bold"),
+                fg="white",
+                bg=color
+            )
+            count_label.pack()
+            
+            # Store reference for updating
+            if label == "🔄 Pending Tasks":
+                self.pending_count = count_label
+            elif label == "✅ Completed":
+                self.completed_count = count_label
+            elif label == "🚀 In Progress":
+                self.inprogress_count = count_label
+            elif label == "📋 Total Assigned":
+                self.total_count = count_label
+        
+        # ========== TASK ACTIONS SECTION ==========
+        actions_card = ModernCardFrame(scrollable_frame, padding=40)
+        actions_card.pack(fill="both", expand=True, pady=(0, 30))
+        
+        tk.Label(
+            actions_card,
+            text="⚡ TASK MANAGEMENT",
+            font=("Segoe UI", 22, "bold"),
+            fg="#DC2626",
+            bg="white"
+        ).pack(anchor="w", pady=(0, 30))
+        
+        tk.Label(
+            actions_card,
+            text="Manage your assigned disaster relief tasks",
+            font=("Segoe UI", 14),
+            fg="#6B7280",
+            bg="white"
+        ).pack(anchor="w", pady=(0, 30))
+        
+        # Button Grid for task actions
+        button_grid = tk.Frame(actions_card, bg="white")
+        button_grid.pack(fill="both", expand=True)
+        
+        # Row 1
+        row1 = tk.Frame(button_grid, bg="white")
+        row1.pack(fill="both", expand=True, pady=(0, 20))
+        
+        # ACCEPT TASK BUTTON (Use Case 15)
+        accept_btn = tk.Button(
+            row1,
+            text="✅ ACCEPT NEW TASK",
+            font=("Segoe UI", 16, "bold"),
+            bg="#10B981",
+            fg="white",
+            activebackground="#059669",
+            activeforeground="white",
+            relief="flat",
+            padx=30,
+            pady=25,
+            cursor="hand2",
+            command=self.open_accept_task
+        )
+        accept_btn.pack(side="left", fill="both", expand=True, padx=(0, 15))
+        
+        # UPDATE TASK BUTTON (Use Case 16)
+        update_btn = tk.Button(
+            row1,
+            text="🔄 UPDATE TASK PROGRESS",
+            font=("Segoe UI", 16, "bold"),
+            bg="#3B82F6",
+            fg="white",
+            activebackground="#2563EB",
+            activeforeground="white",
+            relief="flat",
+            padx=30,
+            pady=25,
+            cursor="hand2",
+            command=self.open_update_task
+        )
+        update_btn.pack(side="right", fill="both", expand=True, padx=(15, 0))
+        
+        # Row 2
+        row2 = tk.Frame(button_grid, bg="white")
+        row2.pack(fill="both", expand=True)
+        
+        # VIEW ALL TASKS BUTTON
+        view_all_btn = tk.Button(
+            row2,
+            text="📋 VIEW ALL ASSIGNED TASKS",
+            font=("Segoe UI", 16, "bold"),
+            bg="#8B5CF6",
+            fg="white",
+            activebackground="#7C3AED",
+            activeforeground="white",
+            relief="flat",
+            padx=30,
+            pady=25,
+            cursor="hand2",
+            command=self.view_all_tasks
+        )
+        view_all_btn.pack(side="left", fill="both", expand=True, padx=(0, 15))
+        
+        # TASK HISTORY BUTTON
+        history_btn = tk.Button(
+            row2,
+            text="📊 VIEW TASK HISTORY",
+            font=("Segoe UI", 16, "bold"),
+            bg="#F59E0B",
+            fg="white",
+            activebackground="#D97706",
+            activeforeground="white",
+            relief="flat",
+            padx=30,
+            pady=25,
+            cursor="hand2",
+            command=self.view_task_history
+        )
+        history_btn.pack(side="right", fill="both", expand=True, padx=(15, 0))
+        
+        # ========== MY TASKS TABLE ==========
+        tasks_card = ModernCardFrame(scrollable_frame, padding=40)
+        tasks_card.pack(fill="both", expand=True)
+        
+        tk.Label(
+            tasks_card,
+            text="📝 MY ASSIGNED TASKS",
+            font=("Segoe UI", 22, "bold"),
+            fg="#374151",
+            bg="white"
+        ).pack(anchor="w", pady=(0, 30))
+        
+        # Refresh button
+        refresh_frame = tk.Frame(tasks_card, bg="white")
+        refresh_frame.pack(fill="x", pady=(0, 20))
+        
+        refresh_btn = tk.Button(
+            refresh_frame,
+            text="🔄 Refresh Task List",
+            font=("Segoe UI", 10),
+            bg="#6B7280",
+            fg="white",
+            relief="flat",
+            padx=15,
+            pady=5,
+            cursor="hand2",
+            command=self.load_my_tasks
+        )
+        refresh_btn.pack(side="left")
+        
+        # Treeview for tasks
+        tree_frame = tk.Frame(tasks_card, bg="white")
+        tree_frame.pack(fill="both", expand=True)
+        
+        # Scrollbars
+        y_scrollbar = ttk.Scrollbar(tree_frame)
+        y_scrollbar.pack(side="right", fill="y")
+        
+        x_scrollbar = ttk.Scrollbar(tree_frame, orient="horizontal")
+        x_scrollbar.pack(side="bottom", fill="x")
+        
+        # Treeview
+        columns = ("taskID", "title", "taskType", "status", "createdBy", "relatedRequestID")
+        self.tree = ttk.Treeview(
+            tree_frame,
+            columns=columns,
+            show="headings",
+            height=8,
+            yscrollcommand=y_scrollbar.set,
+            xscrollcommand=x_scrollbar.set,
+            selectmode="browse"
+        )
+        
+        y_scrollbar.config(command=self.tree.yview)
+        x_scrollbar.config(command=self.tree.xview)
+        self.tree.pack(side="left", fill="both", expand=True)
+        
+        # Configure columns
+        column_configs = {
+            "taskID": ("Task ID", 80, "center"),
+            "title": ("Title", 200, "w"),
+            "taskType": ("Type", 100, "center"),
+            "status": ("Status", 120, "center"),
+            "createdBy": ("Created By", 120, "w"),
+            "relatedRequestID": ("Request ID", 100, "center")
+        }
+        
+        for col in columns:
+            heading, width, anchor = column_configs[col]
+            self.tree.heading(col, text=heading, anchor="center")
+            self.tree.column(col, width=width, anchor=anchor, minwidth=width)
+        
+        # Bind selection event
+        self.tree.bind("<<TreeviewSelect>>", self.on_task_select)
+        
+        # Selection info
+        self.selection_label = tk.Label(
+            tasks_card,
+            text="👈 Select a task to perform actions",
+            font=("Segoe UI", 11),
+            fg="#6B7280",
+            bg="white",
+            justify="left"
+        )
+        self.selection_label.pack(anchor="w", pady=(20, 0))
+
+    def create_status_bar(self):
+        """Create status bar at bottom"""
+        self.status_bar = tk.Frame(self, bg="#333", height=30)
+        self.status_bar.pack(fill="x", side="bottom")
+        
+        self.status_label = tk.Label(
+            self.status_bar,
+            text="✅ Volunteer Dashboard Ready | Connected to Database",
+            fg="white",
+            bg="#333",
+            font=("Segoe UI", 10)
+        )
+        self.status_label.pack(side="left", padx=20)
+
+    def load_my_tasks(self):
+        """Load tasks assigned to this volunteer"""
+        try:
+            self.status_label.config(text="⏳ Loading your tasks...")
+            self.update()
+            
+            volunteer_id = self.logged_in_user.get("id")
+            
+            # Get task counts
+            count_query = """
+            SELECT 
+                SUM(CASE WHEN status = 'pending' OR status = 'unassigned' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+                COUNT(*) as total
+            FROM Task
+            WHERE assignedVolunteerID = %s OR assignedVolunteerID IS NULL
+            """
+            self.cursor.execute(count_query, (volunteer_id,))
+            counts = self.cursor.fetchone()
+            
+            # Update count labels
+            if counts:
+                self.pending_count.config(text=str(counts[0] or 0))
+                self.completed_count.config(text=str(counts[1] or 0))
+                self.inprogress_count.config(text=str(counts[2] or 0))
+                self.total_count.config(text=str(counts[3] or 0))
+            
+            # Get tasks for table
+            task_query = """
+            SELECT 
+                T.taskID, T.title, T.taskType, T.status, 
+                U.name as createdBy, T.relatedRequestID
+            FROM Task T
+            LEFT JOIN UserAccount U ON T.createdBy = U.userID
+            WHERE T.assignedVolunteerID = %s OR T.assignedVolunteerID IS NULL
+            ORDER BY 
+                CASE T.status
+                    WHEN 'unassigned' THEN 1
+                    WHEN 'pending' THEN 2
+                    WHEN 'in_progress' THEN 3
+                    WHEN 'completed' THEN 4
+                    ELSE 5
+                END,
+                T.taskID
+            """
+            self.cursor.execute(task_query, (volunteer_id,))
+            results = self.cursor.fetchall()
+            
+            self.tree.delete(*self.tree.get_children())
+            
+            for row in results:
+                # Format status with icon
+                status_icons = {
+                    "unassigned": "⏳",
+                    "pending": "⏳",
+                    "assigned": "👤",
+                    "in_progress": "🔄",
+                    "completed": "✅"
+                }
+                status = row[3]  # status is at index 3
+                status_icon = status_icons.get(status, "❓")
+                status_display = f"{status_icon} {status.title()}"
+                
+                self.tree.insert("", tk.END, values=(
+                    row[0],  # taskID
+                    row[1],  # title
+                    row[2].title(),  # taskType
+                    status_display,
+                    row[4] or "System",  # createdBy
+                    row[5] or "N/A"  # relatedRequestID
+                ))
+            
+            self.status_label.config(text=f"✅ Loaded {len(results)} tasks")
+            
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load tasks.\n{str(e)}")
+            self.status_label.config(text="❌ Failed to load tasks")
+
+    def on_task_select(self, event):
+        """Handle task selection"""
+        selected_item = self.tree.focus()
+        if selected_item:
+            row = self.tree.item(selected_item)["values"]
+            if row:
+                task_id = row[0]
+                title = row[1]
+                task_type = row[2]
+                status = row[3]
+                
+                self.selection_label.config(
+                    text=f"✅ Selected: Task ID {task_id} | 📝 {title} | 🏷️ {task_type} | 📊 {status}",
+                    fg="#374151"
+                )
+
+    def go_back_to_login(self):
+        """Return to login screen"""
+        if messagebox.askyesno("Confirm", "Return to login screen?"):
+            self.destroy()
+            login_app = LoginApp()
+            login_app.mainloop()
+
+    # ========== TASK ACTION METHODS ==========
+    
+    def open_accept_task(self):
+        """Open Accept Task Form (Use Case 15)"""
+        selected_item = self.tree.focus()
+        if not selected_item:
+            messagebox.showwarning("No Selection", "Please select a task to accept.")
+            self.status_label.config(text="⚠ Please select a task first")
+            return
+            
+        task_values = self.tree.item(selected_item, "values")
+        task_id = task_values[0]
+        task_status = task_values[3]
+        
+        # Check if task is already accepted/completed
+        if "✅" in task_status or "🔄" in task_status:
+            messagebox.showinfo("Task Status", "This task is already in progress or completed.")
+            return
+        
+        # For now, show a message
+        messagebox.showinfo("Accept Task", f"Task {task_id} accepted successfully!")
+        self.status_label.config(text=f"✅ Task {task_id} accepted")
+        
+        # Update task status in database
+        try:
+            update_query = "UPDATE Task SET status = 'assigned' WHERE taskID = %s"
+            self.cursor.execute(update_query, (task_id,))
+            self.db_connection.commit()
+            self.load_my_tasks()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update task: {str(e)}")
+
+    def open_update_task(self):
+        """Open Update Task Form (Use Case 16)"""
+        selected_item = self.tree.focus()
+        if not selected_item:
+            messagebox.showwarning("No Selection", "Please select a task to update.")
+            self.status_label.config(text="⚠ Please select a task first")
+            return
+            
+        task_values = self.tree.item(selected_item, "values")
+        task_id = task_values[0]
+        task_status = task_values[3]
+        
+        # Check if task is unassigned
+        if "⏳" in task_status and "unassigned" in task_status.lower():
+            messagebox.showinfo("Task Status", "Please accept this task first before updating.")
+            return
+        
+        # Show update dialog
+        new_status = simpledialog.askstring(
+            "Update Task Status",
+            f"Update status for Task {task_id}:\n(in_progress, completed, etc.)",
+            parent=self
+        )
+        
+        if new_status:
+            try:
+                update_query = "UPDATE Task SET status = %s WHERE taskID = %s"
+                self.cursor.execute(update_query, (new_status, task_id))
+                
+                # Add to TaskHistory
+                history_query = """
+                INSERT INTO TaskHistory (taskID, volunteerID, previousStatus, newStatus, note)
+                VALUES (%s, %s, %s, %s, %s)
+                """
+                self.cursor.execute(history_query, (
+                    task_id,
+                    self.logged_in_user.get("id"),
+                    task_status.replace("⏳ ", "").replace("✅ ", "").replace("🔄 ", "").replace("👤 ", ""),
+                    new_status,
+                    "Status updated by volunteer"
+                ))
+                
+                self.db_connection.commit()
+                self.status_label.config(text=f"✅ Task {task_id} updated to {new_status}")
+                self.load_my_tasks()
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update task: {str(e)}")
+
+    def view_all_tasks(self):
+        """View all available tasks"""
+        self.status_label.config(text="⏳ Loading all available tasks...")
+        self.load_my_tasks()  # For now, just refresh current view
+        messagebox.showinfo("All Tasks", "Showing all available tasks.")
+
+    def view_task_history(self):
+        """View task history"""
+        volunteer_id = self.logged_in_user.get("id")
+        try:
+            query = """
+            SELECT TH.taskID, TH.previousStatus, TH.newStatus, TH.note, 
+                   TH.timestamp, U.name as volunteerName
+            FROM TaskHistory TH
+            LEFT JOIN UserAccount U ON TH.volunteerID = U.userID
+            WHERE TH.volunteerID = %s
+            ORDER BY TH.timestamp DESC
+            LIMIT 20
+            """
+            self.cursor.execute(query, (volunteer_id,))
+            history = self.cursor.fetchall()
+            
+            if not history:
+                messagebox.showinfo("Task History", "No task history found.")
+                return
+            
+            # Create simple history display
+            history_text = "📊 YOUR TASK HISTORY:\n\n"
+            for record in history:
+                history_text += f"Task #{record[0]}: {record[1]} → {record[2]}\n"
+                history_text += f"Note: {record[3]}\n"
+                history_text += f"Time: {record[4]}\n"
+                history_text += "-" * 40 + "\n"
+            
+            messagebox.showinfo("Task History", history_text)
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load task history.\n{str(e)}")
 
 # ----------------- Run the login -----------------
 if __name__ == "__main__":

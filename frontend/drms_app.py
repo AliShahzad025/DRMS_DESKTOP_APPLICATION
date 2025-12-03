@@ -73,7 +73,7 @@ class DRMSApp(tk.Tk):
         # Fetch users from backend
         users = self.user_service.list_users()
         for u in users:
-            self.tree.insert("", "end", values=(u[0], u[1], u[2], u[3], u[4], u[5]))
+            self.tree.insert("", "end", values=(u['userID'], u['name'], u['email'], u['phone'], u['location'], u['role']))
 
     def open_manage_resources(self):
         self.withdraw()  # Hide the main window
