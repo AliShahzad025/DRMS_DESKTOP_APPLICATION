@@ -1,6 +1,12 @@
+import sys
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import sv_ttk
+
+# Allow imports from project root (so 'data' package is found)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from data.db_connection import DatabaseConnection
 
 class AssignTaskApp(tk.Tk):
@@ -810,7 +816,7 @@ class AssignTaskApp(tk.Tk):
             # Update Task
             self.cursor.execute("""
                 UPDATE Task
-                SET assignedVolunteerID = %s, status = 'in_progress', createdBy = %s
+                SET assignedVolunteerID = %s, status = 'assigned', createdBy = %s
                 WHERE taskID = %s
             """, (volunteer_id, ngo_id, task_id))
 

@@ -197,7 +197,10 @@ class BaseApp(tk.Tk):
         self.colors = None
         self.db_connection = None
         self.cursor = None
+<<<<<<< HEAD
         self.after_id = None # Initialize after_id here
+=======
+>>>>>>> 64f68c9c02ce6399ad50303b29192cd023d3df13
 
     def create_header(self, title, subtitle=None, show_back_button=False, back_command=None):
         """
@@ -286,6 +289,7 @@ class BaseApp(tk.Tk):
         )
         self.time_label.pack(side="right", padx=25)
         
+        self.after_id = None  # Store the ID of the after job
         self.update_time()
     
     def update_time(self):
@@ -461,6 +465,22 @@ class LoginApp(BaseApp):
             command=self.login
         )
         login_btn.pack(fill="x", pady=(0, 25))
+
+        signup_btn = tk.Button(
+            form_frame,
+            text="📝 DON'T HAVE AN ACCOUNT? SIGN UP!",
+            font=("Segoe UI", 12),
+            bg="#6B7280",
+            fg="white",
+            activebackground="#4B5563",
+            activeforeground="white",
+            relief="flat",
+            padx=30,
+            pady=10,
+            cursor="hand2",
+            command=self.open_signup_window
+        )
+        signup_btn.pack(fill="x", pady=(10, 25))
         
         # Footer
         footer = tk.Frame(card, bg="white")
@@ -476,6 +496,14 @@ class LoginApp(BaseApp):
         
         self.after(100, lambda: self.email_entry.focus_set())
         self.create_status_bar()
+
+    def open_signup_window(self):
+        self.destroy() # Close the login window
+        from frontend.signup import SignUpApp
+        root = tk.Tk()
+        app = SignUpApp(root)
+        root.protocol("WM_DELETE_WINDOW", app.on_closing)
+        root.mainloop()
 
     def login(self):
         email = self.email_entry.get().strip()
@@ -637,6 +665,7 @@ class AdminOptionsApp(BaseApp):
             ("📝 REGISTER NEW NGO", self.open_register_ngo, "#EF4444"),
             ("🌐 LANGUAGE SETTINGS", self.change_language, "#6B7280"),
             ("📋 SYSTEM OVERVIEW", self.show_system_overview, "#06B6D4"),
+            ("🛡️ MANAGE NGO PERMISSIONS", self.open_manage_ngo_permissions, "#FFC107"),
         ]
         
         # Add a Manage Resources button for Admin
@@ -764,6 +793,17 @@ class AdminOptionsApp(BaseApp):
         self.destroy()
         from frontend.register_ngo import RegisterNGOApp
         app = RegisterNGOApp(db_connection=self.db_connection)
+        app.mainloop()
+
+    def open_manage_resources(self):
+        self.withdraw()
+        from frontend.manage_resources import ManageResourcesApp
+        app = ManageResourcesApp(logged_in_user=self.logged_in_user, db_connection=self.db_connection, on_close_callback=self.deiconify)
+
+    def open_manage_ngo_permissions(self):
+        self.destroy()
+        from frontend.manage_ngo_permissions import ManageNGOPermissionsApp
+        app = ManageNGOPermissionsApp(self, logged_in_user=self.logged_in_user, db_connection=db)
         app.mainloop()
 
     def open_manage_resources(self):
@@ -1288,6 +1328,10 @@ class VictimDashboardApp(BaseApp):
         self.destroy()  # Or self.withdraw() if you want to keep dashboard open
         sos_app = SOSFormApp(logged_in_user=self.logged_in_user)
         sos_app.mainloop()
+        self.withdraw()  # Hide the main window
+        from frontend.sos_form import SOSFormApp
+        sos_app = SOSFormApp(logged_in_user=self.logged_in_user, db_connection=self.db_connection, on_close_callback=self.deiconify)
+        # sos_app.mainloop() # Removed blocking mainloop
 
     def open_give_feedback(self):
         """Open Give Feedback Form"""
@@ -1298,13 +1342,18 @@ class VictimDashboardApp(BaseApp):
 
     def view_my_requests(self):
         """View SOS requests made by this victim"""
+<<<<<<< HEAD
         
         
         messagebox.showinfo("View Requests", "This feature will be available soon!")
+=======
+        messagebox.showinfo("View Requests", "This feature will be available soon!", parent=self)
+>>>>>>> 64f68c9c02ce6399ad50303b29192cd023d3df13
         self.status_label.config(text="⚠ View My Requests - Coming Soon")
 
     def view_resources(self):
         """View available resources"""
+<<<<<<< HEAD
         messagebox.showinfo("View Requests", "This feature will be available soon!")
         self.status_label.config(text="⚠ View My Requests - Coming Soon")
 
@@ -1312,6 +1361,15 @@ class VictimDashboardApp(BaseApp):
         """View and edit victim profile"""
         messagebox.showinfo("View Requests", "This feature will be available soon!")
         self.status_label.config(text="⚠ View My Requests - Coming Soon")
+=======
+        messagebox.showinfo("View Resources", "This feature will be available soon!", parent=self)
+        self.status_label.config(text="⚠ View Resources - Coming Soon")
+
+    def view_profile(self):
+        """View and edit victim profile"""
+        messagebox.showinfo("View Profile", "This feature will be available soon!", parent=self)
+        self.status_label.config(text="⚠ View Profile - Coming Soon")
+>>>>>>> 64f68c9c02ce6399ad50303b29192cd023d3df13
 
 
 # ----------------- Volunteer Dashboard -----------------
